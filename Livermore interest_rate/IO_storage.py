@@ -38,13 +38,13 @@ c2.execute('''CREATE TABLE IF NOT EXISTS history_list
         inventory_charge   FLOAT          NOT NULL,
         advance_charge     FLOAT          NOT NULL,
         net_profit         FLOAT          NOT NULL,
-        surplus            FLOAT          NOT NULL,
         high               FLOAT          NOT NULL,
         low                FLOAT          NOT NULL,
         max_profit         FLOAT          NOT NULL,
         max_loss           FLOAT          NOT NULL,
         nominal_profit_margin     TEXT          NOT NULL,
         total_profit_margin       TEXT          NOT NULL,
+        surplus            FLOAT          NOT NULL,
         note               TEXT           NULL);''')
 
 # 读取Excel
@@ -100,7 +100,7 @@ for indexs in data.index:
 
     # 净值结余和上一笔净值结余
     if indexs == 0:
-        surplus = initial_nv
+        surplus = initial_nv + net_profit
         last_surplus = surplus
     else:
         last_surplus = surplus
