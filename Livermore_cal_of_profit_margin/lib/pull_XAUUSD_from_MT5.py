@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 '''
-@File    :   from_MT5.py
+@File    :   pull_XAUUSD_from_MT5.py
 @Time    :   2021/05/03 14:18:08
 @Author  :   Wuhaotian 
 @Version :   1.0

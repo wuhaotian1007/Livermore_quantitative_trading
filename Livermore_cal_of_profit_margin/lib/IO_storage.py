@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 '''
-@File    :   input.py
+@File    :   IO_storage.py
 @Time    :   2021/06/23 17:44:42
 @Author  :   Wuhaotian 
 @Version :   1.0
@@ -48,7 +48,7 @@ class IO_storage:
                 surplus            FLOAT          NOT NULL,
                 note               TEXT           NULL);''')
 
-        data = pd.read_excel(trading_history_input_path,
+        trading_history_data = pd.read_excel(trading_history_input_path,
                              sheet_name=0, header=1)
 
         # 读取初始净值
@@ -57,19 +57,19 @@ class IO_storage:
         initial_nv = ws.cell(row=1, column=2).value
 
         # 逐行在df中读取数据并计算后入库
-        for indexs in data.index:
+        for indexs in trading_history_data.index:
 
             # excel直接输入参数
-            trading_time = data.loc[indexs].values[0]
-            trading_currency = data.loc[indexs].values[1]
-            trading_type = data.loc[indexs].values[2]
-            trading_volume = data.loc[indexs].values[3]
-            trading_price = data.loc[indexs].values[4]
-            close_time = data.loc[indexs].values[5]
-            close_price = data.loc[indexs].values[6]
-            service_charge = data.loc[indexs].values[7]
-            inventory_charge = data.loc[indexs].values[8]
-            note = data.loc[indexs].values[9]
+            trading_time = trading_history_data.loc[indexs].values[0]
+            trading_currency = trading_history_data.loc[indexs].values[1]
+            trading_type = trading_history_data.loc[indexs].values[2]
+            trading_volume = trading_history_data.loc[indexs].values[3]
+            trading_price = trading_history_data.loc[indexs].values[4]
+            close_time = trading_history_data.loc[indexs].values[5]
+            close_price = trading_history_data.loc[indexs].values[6]
+            service_charge = trading_history_data.loc[indexs].values[7]
+            inventory_charge = trading_history_data.loc[indexs].values[8]
+            note = trading_history_data.loc[indexs].values[9]
 
             # 查询交易品类信息数据库
             cur_category.execute(

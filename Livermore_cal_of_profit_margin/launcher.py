@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 '''
-@File    :   test.py
+@File    :   launcher.py
 @Time    :   2021/07/14 20:44:14
 @Author  :   Wuhaotian 
 @Version :   1.0
@@ -27,7 +27,7 @@ XAUUSD_db_path = r"database\XAUUSD.db"
 trading_record_db_path = r"database\trading_records.db"
 
 # 交易历史输入xlsx路径
-trading_history_input_path = r"交易历史demo.xlsx"
+trading_history_input_path = r"交易历史输入.xlsx"
 
 # 交易历史输出xlsx路径
 output_xlsx_path = r"trade_history.xlsx"
