@@ -13,18 +13,20 @@ import sqlite3
 import xlsxwriter
 from xlsxwriter import workbook
 
+
 class vis_by_excel:
     def __init__(self, trading_record_db_path, output_xlsx_path, monthly_info_png_path, monthly_surplus_png_path):
         # 建立数据库连接
         conn_trading_record_db = sqlite3.connect(trading_record_db_path)
         cur_trading_record_db = conn_trading_record_db.cursor()
 
-        cur_trading_record_db.execute("select surplus,net_profit from history_list where ID = 1")
+        cur_trading_record_db.execute(
+            "select surplus,net_profit from history_list where ID = 1")
         i = cur_trading_record_db.fetchone()
         initial_surplus = i[0] - i[1]
 
         # 创建一个工作簿
-        xl = xlsxwriter.Workbook(filename = output_xlsx_path)
+        xl = xlsxwriter.Workbook(filename=output_xlsx_path)
         xl.formats[0].set_align('center')
         xl.formats[0].set_border(1)
         xl.formats[0].set_valign('vcenter')
@@ -34,11 +36,11 @@ class vis_by_excel:
 
         # 初始化样式
         style_big = xl.add_format({'font_size': 25, 'bold': True, 'align': 'center',
-                                'border': 1, 'valign': 'vcenter', 'font_name': '微软雅黑'})
+                                   'border': 1, 'valign': 'vcenter', 'font_name': '微软雅黑'})
         style_blue = xl.add_format({'fg_color': '#87CEEB', 'align': 'center',
                                     'border': 1, 'valign': 'vcenter', 'font_name': '微软雅黑'})
         style_red = xl.add_format({'font_color': '#FF0000', 'align': 'center',
-                                'border': 1, 'valign': 'vcenter', 'font_name': '微软雅黑'})
+                                   'border': 1, 'valign': 'vcenter', 'font_name': '微软雅黑'})
 
         style_red2 = xl.add_format({'font_color': '#FF0000', 'align': 'center', 'fg_color': '#F0F8FF',
                                     'border': 1, 'valign': 'vcenter', 'font_name': '微软雅黑'})
@@ -50,7 +52,7 @@ class vis_by_excel:
         sheet.set_column(1, 4, 12)
         sheet.set_column(0, 0, 25)
         sheet.set_column(5, 5, 25)
-        sheet.set_column(6, 22, 12)
+        sheet.set_column(6, 23, 12)
         sheet.set_row(0, 50)
         sheet.set_row(1, 22)
         sheet.merge_range(0, 1, 0, 22, initial_surplus, style_big)
@@ -71,12 +73,13 @@ class vis_by_excel:
         sheet.write(1, 14, '极限亏损', style_blue)
         sheet.write(1, 15, '名义利润率', style_blue)
         sheet.write(1, 16, '总利润率', style_blue)
-        sheet.write(1, 17, '净值结余', style_blue)
-        sheet.write(1, 18, '月度利润率', style_blue)
-        sheet.write(1, 19, '季度利润率', style_blue)
-        sheet.write(1, 20, '年度利润率', style_blue)
-        sheet.write(1, 21, '历史总利润率', style_blue)
-        sheet.write(1, 22, '备注', style_blue)
+        sheet.write(1, 17, '利润出金比例', style_blue)
+        sheet.write(1, 18, '净值结余', style_blue)
+        sheet.write(1, 19, '月度利润率', style_blue)
+        sheet.write(1, 20, '季度利润率', style_blue)
+        sheet.write(1, 21, '年度利润率', style_blue)
+        sheet.write(1, 22, '历史总利润率', style_blue)
+        sheet.write(1, 23, '备注', style_blue)
 
         # 选取数据库中的所有交易数据
         cur_trading_record_db.execute("select * from history_list")
@@ -90,7 +93,6 @@ class vis_by_excel:
         quarter_sum_profit = 0
         year_sum_profit = 0
         total_sum_profit = 0
-
 
         for history in history_list:
             ID = history[0]
@@ -118,7 +120,8 @@ class vis_by_excel:
                     sheet.write(1 + ID, 15, history[16])
                     sheet.write(1 + ID, 16, history[17])
                     sheet.write(1 + ID, 17, history[18])
-                    sheet.write(1 + ID, 22, history[19])
+                    sheet.write(1 + ID, 18, history[19])
+                    sheet.write(1 + ID, 23, history[20])
                 else:
                     sheet.write(1 + ID, 0, history[1], style_red)
                     sheet.write(1 + ID, 1, history[2], style_red)
@@ -138,7 +141,8 @@ class vis_by_excel:
                     sheet.write(1 + ID, 15, history[16], style_red)
                     sheet.write(1 + ID, 16, history[17], style_red)
                     sheet.write(1 + ID, 17, history[18], style_red)
-                    sheet.write(1 + ID, 22, history[19])
+                    sheet.write(1 + ID, 18, history[19], style_red)
+                    sheet.write(1 + ID, 23, history[20], style_red)
             else:
                 if history[11] >= 0:
                     sheet.write(1 + ID, 0, history[1], style2)
@@ -159,7 +163,8 @@ class vis_by_excel:
                     sheet.write(1 + ID, 15, history[16], style2)
                     sheet.write(1 + ID, 16, history[17], style2)
                     sheet.write(1 + ID, 17, history[18], style2)
-                    sheet.write(1 + ID, 22, history[19], style2)
+                    sheet.write(1 + ID, 18, history[19], style2)
+                    sheet.write(1 + ID, 23, history[20], style2)
                 else:
                     sheet.write(1 + ID, 0, history[1], style_red2)
                     sheet.write(1 + ID, 1, history[2], style_red2)
@@ -179,12 +184,13 @@ class vis_by_excel:
                     sheet.write(1 + ID, 15, history[16], style_red2)
                     sheet.write(1 + ID, 16, history[17], style_red2)
                     sheet.write(1 + ID, 17, history[18], style_red2)
-                    sheet.write(1 + ID, 22, history[19], style2)
+                    sheet.write(1 + ID, 18, history[19], style_red2)
+                    sheet.write(1 + ID, 23, history[20], style_red2)
 
             # 合并单元格计算月利润率
             net_profit = history[11]
             row_index = 1 + ID
-            trade_month = history[1][0:7]
+            trade_month = history[6][0:7]
 
             # 如果本月信息和上月不同即为新的一月时
             if trade_month != last_trade_month:
@@ -194,11 +200,12 @@ class vis_by_excel:
                 if end_row_index != 1:
                     # 上个月月度利润率
                     month_profit_margin = month_sum_profit / last_month_surplus
-                    month_profit_margin = "%.2f%%" % (month_profit_margin * 100)
+                    month_profit_margin = "%.2f%%" % (
+                        month_profit_margin * 100)
 
                     # 合并单元格并记录
-                    sheet.merge_range(begin_row_index, 18, end_row_index,
-                                    18, month_profit_margin)
+                    sheet.merge_range(begin_row_index, 19, end_row_index,
+                                      19, month_profit_margin)
 
                 # 开始记录本月月度利润率
                 begin_row_index = row_index
@@ -218,15 +225,16 @@ class vis_by_excel:
                 if ID == len(history_list):
                     end_row_index = row_index
                     month_profit_margin = month_sum_profit / last_month_surplus
-                    month_profit_margin = "%.2f%%" % (month_profit_margin * 100)
-                    sheet.merge_range(begin_row_index, 18, end_row_index,
-                                    18,  month_profit_margin)
+                    month_profit_margin = "%.2f%%" % (
+                        month_profit_margin * 100)
+                    sheet.merge_range(begin_row_index, 19, end_row_index,
+                                      19,  month_profit_margin)
 
             last_trade_month = trade_month
 
             # 合并单元格计算季度利润率
             quarter = {"01": "Q1", "02": "Q1", "03": "Q1", "04": "Q2", "05": "Q2", "06": "Q2",
-                    "07": "Q3", "08": "Q3", "09": "Q3", "10": "Q4", "11": "Q4", "12": "Q4", }
+                       "07": "Q3", "08": "Q3", "09": "Q3", "10": "Q4", "11": "Q4", "12": "Q4", }
             trade_quarter = trade_month[0:4] + quarter[trade_month[5:7]]
 
             # 如果本月信息和上月不同即为新的一季度时
@@ -237,11 +245,12 @@ class vis_by_excel:
                 if end_row_index_quarter != 1:
                     # 上个季度季度利润率
                     quarter_profit_margin = quarter_sum_profit / last_quarter_surplus
-                    quarter_profit_margin = "%.2f%%" % (quarter_profit_margin * 100)
+                    quarter_profit_margin = "%.2f%%" % (
+                        quarter_profit_margin * 100)
 
                     # 合并单元格并记录
-                    sheet.merge_range(begin_row_index_quarter, 19, end_row_index_quarter,
-                                    19, quarter_profit_margin)
+                    sheet.merge_range(begin_row_index_quarter, 20, end_row_index_quarter,
+                                      20, quarter_profit_margin)
 
                 # 开始记录本季度利润率
                 begin_row_index_quarter = row_index
@@ -261,9 +270,10 @@ class vis_by_excel:
                 if ID == len(history_list):
                     end_row_index_quarter = row_index
                     quarter_profit_margin = quarter_sum_profit / last_quarter_surplus
-                    quarter_profit_margin = "%.2f%%" % (quarter_profit_margin * 100)
-                    sheet.merge_range(begin_row_index_quarter, 19, end_row_index_quarter,
-                                    19, quarter_profit_margin)
+                    quarter_profit_margin = "%.2f%%" % (
+                        quarter_profit_margin * 100)
+                    sheet.merge_range(begin_row_index_quarter, 20, end_row_index_quarter,
+                                      20, quarter_profit_margin)
 
             last_trade_quarter = trade_quarter
 
@@ -280,8 +290,8 @@ class vis_by_excel:
                     year_profit_margin = "%.2f%%" % (year_profit_margin * 100)
 
                     # 合并单元格并记录
-                    sheet.merge_range(begin_row_index_year, 20, end_row_index_year,
-                                    20,  year_profit_margin)
+                    sheet.merge_range(begin_row_index_year, 21, end_row_index_year,
+                                      21,  year_profit_margin)
 
                 # 开始记录本年年度利润率
                 begin_row_index_year = row_index
@@ -302,8 +312,8 @@ class vis_by_excel:
                     end_row_index_year = row_index
                     year_profit_margin = year_sum_profit / last_year_surplus
                     year_profit_margin = "%.2f%%" % (year_profit_margin * 100)
-                    sheet.merge_range(begin_row_index_year, 20, end_row_index_year,
-                                    20, year_profit_margin)
+                    sheet.merge_range(begin_row_index_year, 21, end_row_index_year,
+                                      21, year_profit_margin)
 
             last_trade_year = trade_year
 
@@ -312,10 +322,10 @@ class vis_by_excel:
             if ID == len(history_list):
                 total_profit_margin = total_sum_profit / initial_surplus
                 total_profit_margin = "%.2f%%" % (total_profit_margin * 100)
-                sheet.merge_range(2, 21, ID + 1,
-                                21,  total_profit_margin)
+                sheet.merge_range(2, 22, ID + 1,
+                                  22,  total_profit_margin)
 
-        # 在xlsx中插入图标
+         # 在xlsx中插入图标
         sheet.insert_image(len(history_list) + 5, 0, monthly_info_png_path)
         sheet.insert_image(len(history_list) + 5, 10, monthly_surplus_png_path)
 

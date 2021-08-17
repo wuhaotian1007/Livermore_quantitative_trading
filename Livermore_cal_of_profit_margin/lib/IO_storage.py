@@ -45,11 +45,12 @@ class IO_storage:
                 max_loss           FLOAT          NOT NULL,
                 nominal_profit_margin     TEXT          NOT NULL,
                 total_profit_margin       TEXT          NOT NULL,
+                profit_save_ratio         INT           NOT NULL,
                 surplus            FLOAT          NOT NULL,
                 note               TEXT           NULL);''')
 
         trading_history_data = pd.read_excel(trading_history_input_path,
-                             sheet_name=0, header=1)
+                                             sheet_name=0, header=1)
 
         # 读取初始净值
         wb = openpyxl.load_workbook(trading_history_input_path)
@@ -61,15 +62,18 @@ class IO_storage:
 
             # excel直接输入参数
             trading_time = trading_history_data.loc[indexs].values[0]
+            trading_time = trading_time.replace(".","-")
             trading_currency = trading_history_data.loc[indexs].values[1]
             trading_type = trading_history_data.loc[indexs].values[2]
             trading_volume = trading_history_data.loc[indexs].values[3]
             trading_price = trading_history_data.loc[indexs].values[4]
             close_time = trading_history_data.loc[indexs].values[5]
+            close_time = close_time.replace(".","-")
             close_price = trading_history_data.loc[indexs].values[6]
-            service_charge = trading_history_data.loc[indexs].values[7]
-            inventory_charge = trading_history_data.loc[indexs].values[8]
-            note = trading_history_data.loc[indexs].values[9]
+            profit_save_ratio = trading_history_data.loc[indexs].values[7]
+            service_charge = trading_history_data.loc[indexs].values[8]
+            inventory_charge = trading_history_data.loc[indexs].values[9]
+            note = trading_history_data.loc[indexs].values[10]
 
             # 查询交易品类信息数据库
             cur_category.execute(
@@ -100,11 +104,16 @@ class IO_storage:
 
             # 净值结余和上一笔净值结余
             if indexs == 0:
-                surplus = initial_nv + net_profit
+                surplus = initial_nv + net_profit * (1-profit_save_ratio)
                 last_surplus = surplus
             else:
-                last_surplus = surplus
-                surplus += net_profit
+                # 如果本笔净利润大于0则部分利润按照比例出金
+                if net_profit > 0:
+                    last_surplus = surplus
+                    surplus += net_profit * (1-profit_save_ratio)
+                else:
+                    last_surplus = surplus
+                    surplus += net_profit
 
             # 连接对应货币的交易数据
             conn_XAUUSD = sqlite3.connect(XAUUSD_db_path)
@@ -112,9 +121,9 @@ class IO_storage:
 
             # 将时间转换为时间戳格式
             trading_time_array = time.strptime(
-                trading_time, "%Y.%m.%d %H:%M:%S")
+                trading_time, "%Y-%m-%d %H:%M:%S")
             trading_time_stamp = int(time.mktime(trading_time_array))
-            close_time_array = time.strptime(close_time, "%Y.%m.%d %H:%M:%S")
+            close_time_array = time.strptime(close_time, "%Y-%m-%d %H:%M:%S")
             close_time_stamp = int(time.mktime(close_time_array))
 
             # 期间最高价
@@ -155,8 +164,8 @@ class IO_storage:
             total_profit_margin = net_profit/last_surplus
             total_profit_margin = "%.2f%%" % (total_profit_margin * 100)
 
-            cur_storage.execute("insert into history_list(trading_time, trading_currency, trading_type, trading_volume, trading_price, close_time, close_price, service_charge, inventory_charge, advance_charge, net_profit, surplus, high, low, max_profit, max_loss, nominal_profit_margin, total_profit_margin, note) \
-                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?) ", (trading_time, trading_currency, trading_type, trading_volume, trading_price, close_time, close_price, service_charge, inventory_charge, advance_charge, net_profit, surplus, high, low, max_profit, max_loss, nominal_profit_margin, total_profit_margin, note))
+            cur_storage.execute("insert into history_list(trading_time, trading_currency, trading_type, trading_volume, trading_price, close_time, close_price, service_charge, inventory_charge, advance_charge, net_profit, surplus, high, low, max_profit, max_loss, nominal_profit_margin, total_profit_margin, profit_save_ratio, note) \
+                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?) ", (trading_time, trading_currency, trading_type, trading_volume, trading_price, close_time, close_price, service_charge, inventory_charge, advance_charge, net_profit, surplus, high, low, max_profit, max_loss, nominal_profit_margin, total_profit_margin, profit_save_ratio, note))
 
         # 保存并关闭数据库连接
         conn_category.commit()

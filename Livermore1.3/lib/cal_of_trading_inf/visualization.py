@@ -190,7 +190,7 @@ class vis_by_excel:
             # 合并单元格计算月利润率
             net_profit = history[11]
             row_index = 1 + ID
-            trade_month = history[1][0:7]
+            trade_month = history[6][0:7]
 
             # 如果本月信息和上月不同即为新的一月时
             if trade_month != last_trade_month:

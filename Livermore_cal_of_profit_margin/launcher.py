@@ -13,9 +13,13 @@ from lib.pull_XAUUSD_from_MT5 import pull_XAUUSD_from_MT5
 from lib.IO_storage import IO_storage
 from lib.chart import draw_chart
 from lib.visualization import vis_by_excel
+import os
+import sys
 
 # 设置各路径
 
+# 数据库路径
+db_path = r"database"
 # 品类信息数据库路径
 category_db_path = r"database\category.db"
 
@@ -27,7 +31,7 @@ XAUUSD_db_path = r"database\XAUUSD.db"
 trading_record_db_path = r"database\trading_records.db"
 
 # 交易历史输入xlsx路径
-trading_history_input_path = r"交易历史输入.xlsx"
+trading_history_input_path = r"C:\Users\sgnjim\OneDrive\work\Trading_history\交易历史输入.xlsx"
 
 # 交易历史输出xlsx路径
 output_xlsx_path = r"trade_history.xlsx"
@@ -37,6 +41,20 @@ monthly_info_png_path = r"chart\monthly_info.png"
 # 月度利润率图片路径
 monthly_surplus_png_path = r"chart\monthly_surplus.png"
 
+# 删除数据库文件
+
+
+def del_file(path):
+    ls = os.listdir(path)
+    for i in ls:
+        c_path = os.path.join(path, i)
+        if os.path.isdir(c_path):
+            del_file(c_path)
+        else:
+            os.remove(c_path)
+
+
+del_file(db_path)
 
 # 运行
 create_category_db(category_db_path)
@@ -48,6 +66,6 @@ IO_storage(category_db_path, trading_record_db_path,
 
 draw_chart(trading_record_db_path, monthly_info_png_path,
            monthly_surplus_png_path)
-           
+
 vis_by_excel(trading_record_db_path, output_xlsx_path,
              monthly_info_png_path, monthly_surplus_png_path)
