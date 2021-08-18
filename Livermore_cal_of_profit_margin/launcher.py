@@ -15,8 +15,15 @@ from lib.chart import draw_chart
 from lib.visualization import vis_by_excel
 import os
 import sys
+import configparser
 
 # 设置各路径
+
+# 读取全局设置
+conf= configparser.ConfigParser()
+'''读取配置文件'''
+conf.read('global.conf') # 文件路径
+onedrive_path = conf.get("global", "Onedrive_path") # 获取指定section 的option值
 
 # 数据库路径
 db_path = r"database"
@@ -31,7 +38,7 @@ XAUUSD_db_path = r"database\XAUUSD.db"
 trading_record_db_path = r"database\trading_records.db"
 
 # 交易历史输入xlsx路径
-trading_history_input_path = r"C:\Users\sgnjim\OneDrive\work\Trading_history\交易历史输入.xlsx"
+trading_history_input_path = onedrive_path + r"\work\Trading_history\交易历史输入.xlsx"
 
 # 交易历史输出xlsx路径
 output_xlsx_path = r"trade_history.xlsx"
@@ -42,8 +49,6 @@ monthly_info_png_path = r"chart\monthly_info.png"
 monthly_surplus_png_path = r"chart\monthly_surplus.png"
 
 # 删除数据库文件
-
-
 def del_file(path):
     ls = os.listdir(path)
     for i in ls:

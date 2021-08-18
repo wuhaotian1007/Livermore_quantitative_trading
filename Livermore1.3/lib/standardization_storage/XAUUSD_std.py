@@ -99,8 +99,7 @@ class TNX_std:
 class DXY_std:
     def __init__(self, XAUUSD_db_path, DXY_data_path):
         # 连接数据库data.db和指针
-        conn = sqlite3.connect(
-            'C:/Users/sgnjim/Desktop/for_python/Livermore1.3/database/XAUUSD.db')
+        conn = sqlite3.connect(XAUUSD_db_path)
         c = conn.cursor()
 
         # 创建表data_list收集
@@ -112,11 +111,8 @@ class DXY_std:
                 VOLUME          UNSIGNED INT   DEFAULT 0,
                 NOTES           TEXT           NULL);''')
 
-        # DXY原数据路径
-        DXY_data_path = 'C:/Users/sgnjim/Desktop/for_python/Livermore1.3/raw_data/DXY.csv'
-
+        
         # 按路径读取数据
-
         with open(DXY_data_path, 'r', encoding="UTF-8") as f:
             DXY_csv = csv.reader(f)
             next(DXY_csv)
