@@ -90,7 +90,32 @@ class full_buy_price:
                     SMA_30d = signal_info[10]
                     SMA_200d = signal_info[11]
 
+                    # 根据趋势信号和交易信号组合判断交易方向
+                    cur_signal_comb.execute("select trading_direction from trading_signal_comb_list where buy_siganal = {0}".format(trendsignal))
+                    trading_direction = cur_signal_comb.fetchone()[0]
 
+                    # 根据交易方向计算反向3点与反向6点取值
+                    if trading_direction == "buy":
+                        oppo_three = close - three_points
+                        oppo_six = close - three_points * 2
+                    elif trading_direction == "sell":
+                        oppo_three = close + three_points
+                        ojippo_six = close + three_points * 2
+                    
+                    # 建立潜在可行碰撞价格列表
+                    aval_price_list = [cur, close, oppo_three, oppo_six, SMA_5d, SMA_10d, SMA_30d, SMA_200d]
+                    prob_price_list = []
+
+                    # 以实时价格为基准，舍弃比实时价格更差的价格，较优的价格加入可能价格列表中与历史价格记录碰撞
+                    if trading_direction == "buy":
+                        for price in aval_price_list:
+                            if price <= cur:
+                                prob_price_list.append(price)
+                    elif trading_direction == "sell":
+                        for price in aval_price_list:
+                            if price >= cur:
+                                prob_price_list.append(price)   
+                    
 
 
             
