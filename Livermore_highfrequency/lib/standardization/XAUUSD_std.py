@@ -60,6 +60,7 @@ class XAUUSD_std:
                 if not ts_exist:
                     c.execute("insert into XAUUSD_list( DATE, NAME, TIMESTICKER, CLOSE, VOLUME, HIGH, LOW) \
                                 VALUES(?, ?, ?, ?, ?, ? , ?) ", (date, "XAUUSD", ts, close, volume, high, low))
+                    print("输入{0}".format(ts))
                 else:
                     print("重复输入{0}".format(ts))
 
@@ -101,6 +102,7 @@ class DXY_std:
                 if not ts_exist:
                     c.execute("insert into DXY_list(DATE, NAME, TIMESTICKER, CLOSE) \
                                 VALUES(?, ?, ?, ?) ", (date, "DXY", ts, close))
+                    print("输入{0}".format(ts))
                 else:
                     print("重复输入{0}".format(ts))
 
@@ -137,11 +139,12 @@ class TNX_std:
                 close = round(float(close), 2)
                 ts = time.mktime(time.strptime(date, "%Y-%m-%d %H:%M:%S"))
                 c.execute(
-                    "select * from TNX_list Awhere TIMESTICKER == {}".format(ts))
+                    "select * from TNX_list where TIMESTICKER == {}".format(ts))
                 ts_exist = c.fetchone()
                 if not ts_exist:
                     c.execute("insert into TNX_list( DATE, NAME, TIMESTICKER, CLOSE) \
                                     VALUES(?, ?, ?, ?) ", (date, "TNX", ts, close))
+                    print("输入{0}".format(ts))
                 else:
                     print("重复输入{0}".format(ts))
 
