@@ -20,7 +20,7 @@ import sqlite3
 
 
 class comb:
-    def __init__(self, database_path, XAU_ceof, DXY_coef, TNX_coef, constant, match_mode):
+    def __init__(self, database_path, XAU_ceof, DXY_coef, TNX_coef, constant, match_mode, process_length):
         """
         传入参数
         database_path ：数据库路径
@@ -96,6 +96,10 @@ class comb:
         cur_db.execute(
             "select DATE, CLOSE, TIMESTICKER, VOLUME from XAUUSD_list where TIMESTICKER >= {0}".format(max_ts))
         XAUUSD_data_list = cur_db.fetchall()
+        if process_length == "all":
+            print("开始首次组合价格全处理")
+        else:
+            XAUUSD_data_list = XAUUSD_data_list[-process_length:]
 
         if match_mode == "best_effort_match":
             # 新建组合价格table_list
@@ -151,7 +155,6 @@ class comb:
                     cur_db.execute("insert into comb_bem(DATE, NAME, PRICE, TIMESTICKER, CUR_VOLUME, AGGR_VOLUME) VALUES(?, ?, ?, ?, ?, ?) ",
                                    (date, "comb", comb_price, ts, cur_volume, aggr_volume))
 
-                    
                     # 如果为bem_exchange的23:00时记录日线
                     if hour == "23" and frequency == "H":
                         cur_D1_bem_exchange_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE, VOLUME) VALUES(?, ?, ?, ?, ?) ",
@@ -169,6 +172,8 @@ class comb:
                           str(cur_volume) + "\t" + str(aggr_volume))
                     print(str(date) + "\t" + "comb" + "\t" + str(comb_price) + "\t" +
                           str(cur_volume) + "\t" + str(aggr_volume), file=doc_bem)
+                else:
+                    print("重复输入"+date)
 
         elif match_mode == "strict_match":
             # 新建组合价格table_list
@@ -229,7 +234,7 @@ class comb:
                     if not ts_exist:
                         cur_db.execute("insert into comb_sm(DATE, NAME, PRICE, TIMESTICKER, CUR_VOLUME, AGGR_VOLUME) VALUES(?, ?, ?, ?, ?, ?) ",
                                        (date, "comb", comb_price, ts, cur_volume, aggr_volume))
-                        
+
                         # 如果为sm_est的21:00时(此时TNX为14:00）的收盘价记录日线
                         if hour == "21" and frequency == "H":
                             cur_D1_sm_est_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE, VOLUME) VALUES(?, ?, ?, ?, ?) ",
@@ -238,15 +243,17 @@ class comb:
                                                      ("DXY", ts_str, ts-50400, DXY_close))
                             cur_D1_sm_est_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE) VALUES(?, ?, ?, ?) ",
                                                      ("TNX", ts_str, ts-50400, TNX_close))
-                            cur_D1_sm_est_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE) VALUES(?, ?, ?, ?) ",
-                                                     ("comb", ts_str, ts-50400, comb_price))
+                            cur_D1_sm_est_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE, VOLUME) VALUES(?, ?, ?, ?, ?) ",
+                                                     ("comb", ts_str, ts-50400, comb_price, aggr_volume))
                             print("sm_est"+ts_str)
                         # 打印结果
                         print(str(date) + "\t" + "comb" + "\t" + str(comb_price) + "\t" +
                               str(cur_volume) + "\t" + str(aggr_volume))
                         print(str(date) + "\t" + "comb" + "\t" + str(comb_price) + "\t" +
                               str(cur_volume) + "\t" + str(aggr_volume), file=doc_sm)
-
+                    else:
+                        print("重复输入"+date)
+        
         # 关闭数据库连接
         conn_db.commit()
         conn_db.close()
@@ -265,8 +272,10 @@ class comb:
 
 if __name__ == "__main__":
     comb(r"database\XAUUSD_H.db", 3/7, -3 /
-         0.3, -3/0.03, 600, "best_effort_match")
-    comb(r"database\XAUUSD_H.db", 3/7, -3/0.3, -3/0.03, 600, "strict_match")
+         0.3, -3/0.03, 600, "best_effort_match", "all")
+    comb(r"database\XAUUSD_H.db", 3/7, -3 /
+         0.3, -3/0.03, 600, "strict_match", "all")
     comb(r"database\XAUUSD_M.db", 3/7, -3 /
-         0.3, -3/0.03, 600, "best_effort_match")
-    comb(r"database\XAUUSD_M.db", 3/7, -3/0.3, -3/0.03, 600, "strict_match")
+         0.3, -3/0.03, 600, "best_effort_match", "all")
+    comb(r"database\XAUUSD_M.db", 3/7, -3 /
+         0.3, -3/0.03, 600, "strict_match", "all")
