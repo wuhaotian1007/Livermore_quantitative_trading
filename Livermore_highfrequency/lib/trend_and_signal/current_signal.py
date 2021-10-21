@@ -12,8 +12,8 @@ import sqlite3
 
 
 class current_signal:
-    def __init__(self, hf_db_path, D1_db_path, XAUUSD_coef, comb_coef, match_mode, process_length):
-        # hf_db_path:高频数据库路径，D1_db_path日线数据库路径，XAUUSD_coef:XAUUSD系数，comb_coef：comb系数，process_length:倒数处理长度，all为首次入库
+    def __init__(self, hf_db_path, D1_db_path, XAUUSD_signal_txt_path, comb_signal_txt_path, timezone, XAUUSD_coef, comb_coef, match_mode, process_length):
+        # hf_db_path:高频数据库路径，D1_db_path日线数据库路径，XAUUSD_coef:XAUUSD3点价格，comb_coef：comb3点价格，process_length:倒数处理长度，all为首次入库, timezone为时区，matchmode为匹配模式
 
         # 建立日线数据库和高频数据库连接
         conn_hf_db = sqlite3.connect(hf_db_path)
@@ -22,9 +22,8 @@ class current_signal:
         cur_hf_db = conn_hf_db.cursor()
         cur_D1_db = conn_D1_db.cursor()
 
-        cur_hf_db.execute("select * from ")
-
-        process_time = 0
+        XAUUSD_signal_file = open(XAUUSD_signal_txt_path, "w+")
+        comb_signal_file = open(comb_signal_txt_path, "w+")
 
         def iter_XAUUSD():
             # 遍历高频数据db
@@ -41,14 +40,274 @@ class current_signal:
             last_date = ""
             last_up_key_spot = 0
             last_down_key_spot = 0
+
+            # today_n_times 为当天某一信号出现次数
+            today_1_times = 0
+            today_2_times = 0
+            today_3_times = 0
+            today_4_times = 0
+            today_7u_times = 0
+            today_7d_times = 0
+
+            # 记录为当天最高价或最低价格
+            today_max_price = 0
+            today_min_price = 0
+
             # 开始遍历XAUUSD
             for XAUUSD_info in XAUUSD_list:
+                total_date = XAUUSD_info[0]
                 date = XAUUSD_info[0][:10]
                 close = XAUUSD_info[2]
                 ts = XAUUSD_info[3]
+                signal = ""
+
+                # 判断当日最高价与最低价，如果是新的一天将会在后面覆盖
+                today_max_price = max(close, today_max_price)
+                today_min_price = min(close, today_min_price)
 
                 if date != last_date:
-                    # 查询XAUUSD日线关键点价格
+                    # 如果是新的一天，查询XAUUSD日线关键点信息
                     cur_D1_db.execute(
-                        "select price from STOCK_LIST where name == {0} and keyspot == {1} and timesticker <= {2} and ".format("XAUUSD", 1, ts))
-                
+                        "select PRICE from STOCK_LIST where NAME = '{0}' and KEYSPOT = {1} and TIMESTICKER <= {2} and COLUMN in {3} ".format("XAUUSD", 1, ts, (1, 2, 3)))
+                    last_up_key_spot = cur_D1_db.fetchall()[-1][0]
+
+                    cur_D1_db.execute(
+                        "select PRICE from STOCK_LIST where NAME = '{0}' and KEYSPOT = {1} and TIMESTICKER <= {2} and COLUMN in {3} ".format("XAUUSD", 1, ts, (4, 5, 6)))
+                    last_down_key_spot = cur_D1_db.fetchall()[-1][0]
+
+                    # 如果是新的一天重新开始记录最高价和最低价
+                    today_max_price = close
+                    today_min_price = close
+
+                    # today_n_times 为当天某一信号出现次数
+                    today_1_times = 0
+                    today_2_times = 0
+                    today_3_times = 0
+                    today_4_times = 0
+                    today_7u_times = 0
+                    today_7d_times = 0
+
+                # 日期替换
+                last_date = date
+
+                # 查询当前记录栏（前一日线的记录栏）
+                cur_D1_db.execute(
+                    "select column from STOCK_LIST where name == '{0}' and timesticker <= {1}".format("XAUUSD", ts-86400))
+                cur_column = cur_D1_db.fetchall()[-1][0]
+
+                # 根据当前记录栏判断趋势信号
+                # 当前趋势栏在上升趋势栏时，与上升趋势栏中的最新关键点比较，向下3点为上升趋势结束（记录为1），向上3点为上升趋势恢复（记录为2），若日内创新高但最新的价格比新高低6点则为日内上升趋势危险信号（记录为7u)
+                if cur_column in (1, 2, 3):
+                    if close <= last_up_key_spot - 3*XAUUSD_coef:
+                        signal = "上升趋势结束"
+                        today_1_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_1_times), file=XAUUSD_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_1_times))
+                    elif close >= last_up_key_spot + 3*XAUUSD_coef:
+                        signal = "上升趋势恢复"
+                        today_2_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_2_times), file=XAUUSD_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_2_times))
+                    if close <= today_max_price - 6*XAUUSD_coef:
+                        signal = "上升日内危险"
+                        today_7u_times += 1
+                        # 其余信号出现次数归0
+                        today_1_times = 0
+                        today_2_times = 0
+                        today_3_times = 0
+                        today_4_times = 0
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7u_times), file=XAUUSD_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7u_times))
+
+                # 当前趋势栏在下降趋势栏时，与下降趋势栏中的最新关键点比较，向上3点为下降趋势结束（记录为3），向下3点为下降趋势恢复（记录为4），若日内创新低但最新的价格比新低高6点则为日内下降趋势危险信号（记录为7d）
+                elif cur_column in (4, 5, 6):
+                    if close >= last_down_key_spot + 3*XAUUSD_coef:
+                        signal = "下降趋势结束"
+                        today_3_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_3_times), file=XAUUSD_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_3_times))
+                    elif close <= last_down_key_spot - 3*XAUUSD_coef:
+                        signal = "下降趋势恢复"
+                        today_4_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_4_times), file=XAUUSD_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_4_times))
+                    if close >= today_min_price + 6*XAUUSD_coef:
+                        signal = "下降日内危险"
+                        today_7d_times += 1
+                        # 其余信号出现次数归0
+                        today_1_times = 0
+                        today_2_times = 0
+                        today_3_times = 0
+                        today_4_times = 0
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7d_times), file=XAUUSD_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7d_times))
+
+                if signal == "":
+                    print("时区："+timezone + "\t" + total_date +
+                          "\tXAUUSD价格："+str(close), file=XAUUSD_signal_file)
+                    print("时区："+timezone + "\t" +
+                          total_date+"\tXAUUSD价格："+str(close))
+
+        iter_XAUUSD()
+
+        def iter_comb():
+            # 遍历高频数据comb
+            # 遍历comb
+            if match_mode == "best_effort_match":
+                cur_hf_db.execute("select * from comb_bem")
+                comb_list = cur_hf_db.fetchall()
+            elif match_mode == "strict_match":
+                cur_hf_db.execute("select * from comb_sm")
+                comb_list = cur_hf_db.fetchall()
+
+            # 判断处理长度，根据处理长度截取数据范围
+            if process_length == "all":
+                print("首次处理实时信号")
+            else:
+                comb_list = comb_list[-process_length:]
+
+            last_date = ""
+            last_up_key_spot = 0
+            last_down_key_spot = 0
+
+            # today_n_times 为当天某一信号出现次数
+            today_1_times = 0
+            today_2_times = 0
+            today_3_times = 0
+            today_4_times = 0
+            today_7u_times = 0
+            today_7d_times = 0
+
+            # 记录为当天最高价或最低价格
+            today_max_price = 0
+            today_min_price = 0
+
+            # 开始遍历XAUUSD
+            for comb_info in comb_list:
+                total_date = comb_info[0]
+                date = comb_info[0][:10]
+                close = comb_info[2]
+                ts = comb_info[3]
+                signal = ""
+
+                # 判断当日最高价与最低价，如果是新的一天将会在后面覆盖
+                today_max_price = max(close, today_max_price)
+                today_min_price = min(close, today_min_price)
+
+                if date != last_date:
+                    # 如果是新的一天，查询日线关键点信息
+                    cur_D1_db.execute(
+                        "select price from STOCK_LIST where name == '{0}' and keyspot == {1} and timesticker <= {2} and column in {3} ".format("comb", 1, ts, (1, 2, 3)))
+                    last_up_key_spot = cur_D1_db.fetchall()[-1][0]
+
+                    cur_D1_db.execute(
+                        "select price from STOCK_LIST where name == '{0}' and keyspot == {1} and timesticker <= {2} and column in {3} ".format("comb", 1, ts, (4, 5, 6)))
+                    last_down_key_spot = cur_D1_db.fetchall()[-1][0]
+
+                    # 如果是新的一天重新开始记录最高价和最低价
+                    today_max_price = close
+                    today_min_price = close
+
+                    # today_n_times 为当天某一信号出现次数
+                    today_1_times = 0
+                    today_2_times = 0
+                    today_3_times = 0
+                    today_4_times = 0
+                    today_7u_times = 0
+                    today_7d_times = 0
+
+                # 日期替换
+                last_date = date
+
+                # 查询当前记录栏（前一日线的记录栏）
+                cur_D1_db.execute(
+                    "select column from STOCK_LIST where name == '{0}' and timesticker <= {1}".format("comb", ts-86400))
+                cur_column = cur_D1_db.fetchall()[-1][0]
+
+                # 根据当前记录栏判断趋势信号
+                # 当前趋势栏在上升趋势栏时，与上升趋势栏中的最新关键点比较，向下3点为上升趋势结束（记录为1），向上3点为上升趋势恢复（记录为2），若日内创新高但最新的价格比新高低6点则为日内上升趋势危险信号（记录为7u)
+                if cur_column in (1, 2, 3):
+                    if close <= last_up_key_spot - 3*comb_coef:
+                        signal = "上升趋势结束"
+                        today_1_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_1_times), file=comb_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_1_times))
+                    elif close >= last_up_key_spot + 3*comb_coef:
+                        signal = "上升趋势恢复"
+                        today_2_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_2_times), file=comb_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_2_times))
+                    if close <= today_max_price - 6*comb_coef:
+                        signal = "上升日内危险"
+                        today_7u_times += 1
+                        # 其余信号出现次数归0
+                        today_1_times = 0
+                        today_2_times = 0
+                        today_3_times = 0
+                        today_4_times = 0
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7u_times), file=comb_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7u_times))
+
+                # 当前趋势栏在下降趋势栏时，与下降趋势栏中的最新关键点比较，向上3点为下降趋势结束（记录为3），向下3点为下降趋势恢复（记录为4），若日内创新低但最新的价格比新低高6点则为日内下降趋势危险信号（记录为7d）
+                elif cur_column in (4, 5, 6):
+                    if close >= last_down_key_spot + 3*comb_coef:
+                        signal = "下降趋势结束"
+                        today_3_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_3_times), file=comb_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_3_times))
+                    elif close <= last_down_key_spot - 3*comb_coef:
+                        signal = "下降趋势恢复"
+                        today_4_times += 1
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_4_times), file=comb_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_4_times))
+                    if close >= today_min_price + 6*comb_coef:
+                        signal = "下降日内危险"
+                        today_7d_times += 1
+                        # 其余信号出现次数归0
+                        today_1_times = 0
+                        today_2_times = 0
+                        today_3_times = 0
+                        today_4_times = 0
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7d_times), file=comb_signal_file)
+                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
+                              signal+"\t信号发生次数：" + str(today_7d_times))
+
+                if signal == "":
+                    print("时区："+timezone + "\t" + total_date +
+                          "\tcomb价格："+str(close), file=comb_signal_file)
+                    print("时区："+timezone + "\t" +
+                          total_date+"\tcomb价格："+str(close))
+        iter_comb()
+
+        XAUUSD_signal_file.close()
+        comb_signal_file.close()
+
+
+if __name__ == "__main__":
+    current_signal(r"database\XAUUSD_M.db", r"database\XAUUSD_DXY_TNX_D1_bem_exchange.db", r"report\XAUUSD_exchange_bem.txt",
+                   r"report\XAUUSD_DXY_TNX_comb_exchange_bem.txt", "exchange", 7/3, 9/3, "best_effort_match", "all")
+    current_signal(r"database\XAUUSD_M.db", r"database\XAUUSD_DXY_TNX_D1_sm_est.db", r"report\XAUUSD_sm_est.txt",
+                   r"report\XAUUSD_DXY_TNX_comb_sm_est.txt", "est", 7/3, 9/3, "strict_match", "all")

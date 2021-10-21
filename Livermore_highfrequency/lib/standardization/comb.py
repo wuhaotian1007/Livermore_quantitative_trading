@@ -163,8 +163,8 @@ class comb:
                                                        ("DXY", ts_str, ts, DXY_close))
                         cur_D1_bem_exchange_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE) VALUES(?, ?, ?, ?) ",
                                                        ("TNX", ts_str, ts, TNX_close))
-                        cur_D1_bem_exchange_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE) VALUES(?, ?, ?, ?) ",
-                                                       ("comb", ts_str, ts, comb_price))
+                        cur_D1_bem_exchange_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE, VOLUME) VALUES(?, ?, ?, ?, ?) ",
+                                                       ("comb", ts_str, ts, comb_price, aggr_volume))
                         print("bem_exchange"+ts_str)
 
                     # 打印结果
@@ -253,7 +253,7 @@ class comb:
                               str(cur_volume) + "\t" + str(aggr_volume), file=doc_sm)
                     else:
                         print("重复输入"+date)
-        
+
         # 关闭数据库连接
         conn_db.commit()
         conn_db.close()
