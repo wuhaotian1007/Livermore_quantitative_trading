@@ -35,6 +35,10 @@ class comb:
 
         if frequency == "H":
             half_path = database_path[:-4]
+            if DXY_coef != 0:
+                half_path += "DXY_"
+            if TNX_coef != 0:
+                half_path += "TNX_"
 
             # 建立日线bem交易所数据库连接
             conn_D1_bem_exchange_db = sqlite3.connect(
@@ -147,6 +151,7 @@ class comb:
                     cur_db.execute("insert into comb_bem(DATE, NAME, PRICE, TIMESTICKER, CUR_VOLUME, AGGR_VOLUME) VALUES(?, ?, ?, ?, ?, ?) ",
                                    (date, "comb", comb_price, ts, cur_volume, aggr_volume))
 
+                    
                     # 如果为bem_exchange的23:00时记录日线
                     if hour == "23" and frequency == "H":
                         cur_D1_bem_exchange_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE, VOLUME) VALUES(?, ?, ?, ?, ?) ",
@@ -157,6 +162,7 @@ class comb:
                                                        ("TNX", ts_str, ts, TNX_close))
                         cur_D1_bem_exchange_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE) VALUES(?, ?, ?, ?) ",
                                                        ("comb", ts_str, ts, comb_price))
+                        print("bem_exchange"+ts_str)
 
                     # 打印结果
                     print(str(date) + "\t" + "comb" + "\t" + str(comb_price) + "\t" +
@@ -223,7 +229,7 @@ class comb:
                     if not ts_exist:
                         cur_db.execute("insert into comb_sm(DATE, NAME, PRICE, TIMESTICKER, CUR_VOLUME, AGGR_VOLUME) VALUES(?, ?, ?, ?, ?, ?) ",
                                        (date, "comb", comb_price, ts, cur_volume, aggr_volume))
-
+                        
                         # 如果为sm_est的21:00时(此时TNX为14:00）的收盘价记录日线
                         if hour == "21" and frequency == "H":
                             cur_D1_sm_est_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE, VOLUME) VALUES(?, ?, ?, ?, ?) ",
@@ -234,7 +240,7 @@ class comb:
                                                      ("TNX", ts_str, ts-50400, TNX_close))
                             cur_D1_sm_est_db.execute("insert into STOCK_LIST(NAME, DATE, TIMESTICKER, PRICE) VALUES(?, ?, ?, ?) ",
                                                      ("comb", ts_str, ts-50400, comb_price))
-
+                            print("sm_est"+ts_str)
                         # 打印结果
                         print(str(date) + "\t" + "comb" + "\t" + str(comb_price) + "\t" +
                               str(cur_volume) + "\t" + str(aggr_volume))
