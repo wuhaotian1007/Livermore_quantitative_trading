@@ -92,9 +92,9 @@ XAUUSD_sm_est_txt_path = r"report\XAUUSD_sm_est.txt"
 XAUUSD_DXY_TNX_D1_bem_exchange_xlsx_path = r"report\XAUUSD_DXY_TNX_D1_bem_exchange.xlsx"
 XAUUSD_DXY_TNX_D1_sm_est_xlsx_path = r"report\XAUUSD_DXY_TNX_D1_sm_est.xlsx"
 XAUUSD_DXY_TNX_D1_bem_exchange_cloud_xlsx_path = onedrive_path + \
-    r"work\Livermore_report\latest_report\XAUUSD_DXY_TNX_D1_bem_exchange.xlsx"
+    r"\work\Livermore_report\latest_report\XAUUSD_DXY_TNX_D1_bem_exchange.xlsx"
 XAUUSD_DXY_TNX_D1_sm_est_cloud_xlsx_path = onedrive_path + \
-    r"work\Livermore_report\latest_report\XAUUSD_DXY_TNX_D1_sm_est.xlsx"
+    r"\work\Livermore_report\latest_report\XAUUSD_DXY_TNX_D1_sm_est.xlsx"
 # 首次运行程序
 
 
