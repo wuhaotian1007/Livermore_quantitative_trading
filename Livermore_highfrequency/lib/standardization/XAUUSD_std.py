@@ -20,7 +20,7 @@ import sqlite3
 
 
 class XAUUSD_std:
-    def __init__(self, XAUUSD_data_path, XAUUSD_db_path):
+    def __init__(self, XAUUSD_data_path, XAUUSD_db_path, length):
         # 连接数据库data.db和指针
         conn = sqlite3.connect(XAUUSD_db_path)
         c = conn.cursor()
@@ -40,7 +40,7 @@ class XAUUSD_std:
         with open(XAUUSD_data_path, 'r', encoding="UTF-8") as f_XAUUSD:
             XAUUSD_csv = csv.reader(f_XAUUSD)
             # 跳过第一行
-            next(f_XAUUSD)
+            next(XAUUSD_csv)
             for row in XAUUSD_csv:
                 date = row[1]
                 # 改变日期格式从yyyy/m/d到yyyy-mm-dd
@@ -72,7 +72,7 @@ class XAUUSD_std:
 
 
 class DXY_std:
-    def __init__(self, DXY_data_path, XAUUSD_db_path):
+    def __init__(self, DXY_data_path, XAUUSD_db_path, length):
         # 连接数据库data.db和指针
         conn = sqlite3.connect(XAUUSD_db_path)
         c = conn.cursor()
@@ -114,7 +114,7 @@ class DXY_std:
 
 
 class TNX_std:
-    def __init__(self, TNX_data_path, XAUUSD_db_path):
+    def __init__(self, TNX_data_path, XAUUSD_db_path, length):
         # 连接数据库data.db和指针
         conn = sqlite3.connect(XAUUSD_db_path)
         c = conn.cursor()
@@ -157,11 +157,11 @@ class TNX_std:
 
 if __name__ == '__main__':
     # 小时线入库
-    XAUUSD_std(r"raw_data\XAUUSD_H1.csv", r"database\XAUUSD_H.db")
-    DXY_std(r"raw_data\DXY_H1.csv", r"database\XAUUSD_H.db")
-    TNX_std(r"raw_data\TNX_H1.csv", r"database\XAUUSD_H.db")
+    XAUUSD_std(r"raw_data\XAUUSD_H1.csv", r"database\XAUUSD_H.db",5)
+    DXY_std(r"raw_data\DXY_H1.csv", r"database\XAUUSD_H.db",5)
+    TNX_std(r"raw_data\TNX_H1.csv", r"database\XAUUSD_H.db",5)
 
     # 分钟线入库
-    XAUUSD_std(r"raw_data\XAUUSD_M1.csv", r"database\XAUUSD_M.db")
-    DXY_std(r"raw_data\DXY_M2.csv", r"database\XAUUSD_M.db")
-    TNX_std(r"raw_data\TNX_M2.csv", r"database\XAUUSD_M.db")
+    XAUUSD_std(r"raw_data\XAUUSD_M1.csv", r"database\XAUUSD_M.db",5)
+    DXY_std(r"raw_data\DXY_M2.csv", r"database\XAUUSD_M.db",5)
+    TNX_std(r"raw_data\TNX_M2.csv", r"database\XAUUSD_M.db",5)

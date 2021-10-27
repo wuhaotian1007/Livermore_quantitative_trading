@@ -50,5 +50,5 @@ class pull_from_yfinance_H1:
 
 if __name__ == "__main__":
     pull_from_yfinance(r"raw_data\DXY_M2.csv",
-                       r"raw_data\TNX_M2.csv", "2m", "60d")
+                       r"raw_data\TNX_M2.csv", "1m", "30d")
     pull_from_yfinance_H1(r"raw_data\DXY_H1.csv", r"raw_data\TNX_H1.csv")

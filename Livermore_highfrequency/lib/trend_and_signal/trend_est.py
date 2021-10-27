@@ -17,8 +17,12 @@ import datetime
 
 
 class def_down_XAUUSD_DXY_TNX:
-    # 输入的各项coef用于趋势测定，而非组合价格，故为三点对应价格的绝对值
     def __init__(self, XAUUSD_DXY_TNX_db_path, XAUUSD_coef, DXY_coef, TNX_coef, comb_coef):
+        """
+        传入参数
+        XAUUSD_DXY_TNX_db_path ：XAUUSD_DXY_TNX组合后D1数据库路径
+        输入的各项coef用于趋势测定，而非组合价格，故为三点对应价格的绝对值
+        """
         # 连接数据库data.db和指针
         conn = sqlite3.connect(XAUUSD_DXY_TNX_db_path)
         c = conn.cursor()
@@ -1998,6 +2002,6 @@ class def_down_XAU_TNX:
 
 if __name__ == "__main__":
     def_down_XAUUSD_DXY_TNX(
-        r"database\XAUUSD_DXY_TNX_D1_bem_exchange.db", 7/3, 0.3/3, 0.03/3, 3/9)
+        r"database\XAUUSD_DXY_TNX_D1_bem_exchange.db", 7/3, 0.3/3, 0.03/3, 9/3)
     def_down_XAUUSD_DXY_TNX(
-        r"database\XAUUSD_DXY_TNX_D1_sm_est.db", 7/3, 0.3/3, 0.03/3, 3/9)
+        r"database\XAUUSD_DXY_TNX_D1_sm_est.db", 7/3, 0.3/3, 0.03/3, 9/3)
