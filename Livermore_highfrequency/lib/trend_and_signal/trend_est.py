@@ -31,6 +31,10 @@ class def_down_XAUUSD_DXY_TNX:
         c.execute("SELECT max(ID) from STOCK_LIST")
         length = int(c.fetchone()[0]/4)
 
+        # 重置column和record
+        c.execute("update STOCK_LIST SET RECORD = 0")
+        c.execute("update STOCK_LIST SET RECORD = 0")
+        
         # 设定第一个值 RECORD为1
         c.execute("update STOCK_LIST SET RECORD = 1 where ID < 5")
 
