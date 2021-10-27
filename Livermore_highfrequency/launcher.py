@@ -219,6 +219,7 @@ def carry_out():
     elif execute_way == "normal":
         print("开始执行日常实时常驻程序")
         minute_cycle()
+        daily_cycle()
 
         def tasklist():
             schedule.clear()
