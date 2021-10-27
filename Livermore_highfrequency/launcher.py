@@ -12,6 +12,7 @@ import os
 import sys
 import schedule
 import configparser
+import time
 
 from lib.pull_data.pull_from_MT5 import pull_from_MT5_H1, pull_from_MT5_M1
 from lib.pull_data.pull_from_yfinance import pull_from_yfinance_H1, pull_from_yfinance
@@ -195,8 +196,10 @@ def daily_cycle():
     vis_trend(XAUUSD_DXY_TNX_D1_sm_est_db_path,
               XAUUSD_DXY_TNX_D1_sm_est_xlsx_path)
 
-
+def time_pass():
+    print(1)
 # schedule 定期执行
+
 def carry_out():
     execute_way = input("execute_way:(initial/normal):")
 
@@ -206,9 +209,16 @@ def carry_out():
 
     elif execute_way == "normal":
         print("开始执行日常实时常驻程序")
-        # 每分钟执行一次minute_cycle
-        schedule.every().minute.do(minute_cycle)
-        # 每天执行一次daily_cycle
-        schedule.every().day.do(daily_cycle)
+        minute_cycle()
+        def tasklist():
+            schedule.clear()
+            # 每分钟执行一次minute_cycle
+            schedule.every(1).minutes.do(minute_cycle)
+            # 每天执行一次daily_cycle
+            schedule.every().day.at("00:00").do(daily_cycle)
+
+            while True:
+                schedule.run_pending()
+        tasklist()
 
 carry_out()

@@ -39,6 +39,7 @@ class XAUUSD_std:
         # 按路径读取数据
         df = pd.read_csv(XAUUSD_data_path)
         if length:
+            length = length[0]
             df = df.tail(length)
 
         # 遍历df行
@@ -89,6 +90,7 @@ class DXY_std:
         # 按路径读取数据
         df = pd.read_csv(DXY_data_path)
         if length:
+            length = length[0]
             df = df.tail(length)
 
         for index, row in df.iterrows():
@@ -131,6 +133,7 @@ class TNX_std:
 
         df = pd.read_csv(TNX_data_path)
         if length:
+            length = length[0]
             df = df.tail(length)
         for index, row in df.iterrows():
             date = row[0][0:19]
