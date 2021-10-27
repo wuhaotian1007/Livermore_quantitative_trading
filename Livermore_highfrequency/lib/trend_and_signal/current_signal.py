@@ -9,11 +9,12 @@
 
 # here put the import lib
 import sqlite3
+import telegram
 
 
 class current_signal:
-    def __init__(self, hf_db_path, D1_db_path, XAUUSD_signal_txt_path, comb_signal_txt_path, timezone, XAUUSD_coef, comb_coef, match_mode, process_length):
-        # hf_db_path:高频数据库路径，D1_db_path日线数据库路径，XAUUSD_coef:XAUUSD3点价格，comb_coef：comb3点价格，process_length:倒数处理长度，all为首次入库, timezone为时区，matchmode为匹配模式
+    def __init__(self, hf_db_path, D1_db_path, XAUUSD_signal_txt_path, comb_signal_txt_path, timezone, XAUUSD_coef, comb_coef, match_mode, process_length, bot_token, *receiver_id):
+        # hf_db_path:高频数据库路径，D1_db_path日线数据库路径，XAUUSD_coef:XAUUSD3点价格，comb_coef：comb3点价格，process_length:倒数处理长度，all为首次入库, timezone为时区，matchmode为匹配模式, process_length为处理长度， bot_token为tg机器人token，receiver_id为接收人id
 
         # 建立日线数据库和高频数据库连接
         conn_hf_db = sqlite3.connect(hf_db_path)
@@ -25,6 +26,22 @@ class current_signal:
         XAUUSD_signal_file = open(XAUUSD_signal_txt_path, "w+")
         comb_signal_file = open(comb_signal_txt_path, "w+")
 
+        # 建立tg机器人连接
+        def connect_tg_bot():
+            global tg_bot
+
+            tg_bot = telegram.Bot(token=bot_token)
+            print("tg机器人{0}已启用".format(bot_token))
+
+        connect_tg_bot()
+
+        # tg机器人发送消息函数
+        def bot_send_notification(text):
+            # 遍历接受人id数组发送信息
+            for id in receiver_id:
+                tg_bot.send_message(chat_id=id, text=text)
+
+        # XAUUSD遍历与信号
         def iter_XAUUSD():
             # 遍历高频数据db
             # 遍历XAUUSD
@@ -60,6 +77,7 @@ class current_signal:
                 close = XAUUSD_info[2]
                 ts = XAUUSD_info[3]
                 signal = ""
+                status = ""
 
                 # 判断当日最高价与最低价，如果是新的一天将会在后面覆盖
                 today_max_price = max(close, today_max_price)
@@ -101,17 +119,27 @@ class current_signal:
                     if close <= last_up_key_spot - 3*XAUUSD_coef:
                         signal = "上升趋势结束"
                         today_1_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_1_times), file=XAUUSD_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_1_times))
+
+                        # 价格在下降时，判断当前价格是否低于本日最低价格，并记录statu状态
+                        if close < today_min_price:
+                            status = "status:lower"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tXAUUSD价格：" + \
+                            str(close)+"\tXAUUSD存在趋势信号：" + signal + \
+                            "\t信号发生次数：" + str(today_1_times) + status
+
                     elif close >= last_up_key_spot + 3*XAUUSD_coef:
                         signal = "上升趋势恢复"
                         today_2_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_2_times), file=XAUUSD_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_2_times))
+
+                        # 价格在上升时，判断当前价格与今日最高价格大小并记录status
+                        if close > today_max_price:
+                            status = "status:higher"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tXAUUSD价格：" + \
+                            str(close)+"\tXAUUSD存在趋势信号：" + signal + \
+                            "\t信号发生次数：" + str(today_2_times) + status
+
                     if close <= today_max_price - 6*XAUUSD_coef:
                         signal = "上升日内危险"
                         today_7u_times += 1
@@ -120,27 +148,39 @@ class current_signal:
                         today_2_times = 0
                         today_3_times = 0
                         today_4_times = 0
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7u_times), file=XAUUSD_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7u_times))
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tXAUUSD价格：" + \
+                            str(close)+"\tXAUUSD存在趋势信号：" + signal + \
+                            "\t信号发生次数：" + str(today_7u_times) + status
 
                 # 当前趋势栏在下降趋势栏时，与下降趋势栏中的最新关键点比较，向上3点为下降趋势结束（记录为3），向下3点为下降趋势恢复（记录为4），若日内创新低但最新的价格比新低高6点则为日内下降趋势危险信号（记录为7d）
                 elif cur_column in (4, 5, 6):
                     if close >= last_down_key_spot + 3*XAUUSD_coef:
                         signal = "下降趋势结束"
                         today_3_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_3_times), file=XAUUSD_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_3_times))
+
+                        # 价格在上升时，判断当前价格与今日最高价格大小并记录status
+                        if close > today_max_price:
+                            status = "status:higher"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tXAUUSD价格：" + \
+                            str(close)+"\tXAUUSD存在趋势信号：" + signal + \
+                            "\t信号发生次数：" + str(today_3_times) + status
+
+                        # 使用tg机器人发送信号
+
                     elif close <= last_down_key_spot - 3*XAUUSD_coef:
                         signal = "下降趋势恢复"
                         today_4_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_4_times), file=XAUUSD_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_4_times))
+
+                        # 价格在下降时，判断当前价格是否低于本日最低价格，并记录statu状态
+                        if close < today_min_price:
+                            status = "status:lower"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tXAUUSD价格：" + \
+                            str(close)+"\tXAUUSD存在趋势信号：" + signal + \
+                            "\t信号发生次数：" + str(today_4_times) + status
+
                     if close >= today_min_price + 6*XAUUSD_coef:
                         signal = "下降日内危险"
                         today_7d_times += 1
@@ -149,16 +189,26 @@ class current_signal:
                         today_2_times = 0
                         today_3_times = 0
                         today_4_times = 0
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7d_times), file=XAUUSD_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tXAUUSD价格："+str(close)+"\tXAUUSD存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7d_times))
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tXAUUSD价格：" + \
+                            str(close)+"\tXAUUSD存在趋势信号：" + signal + \
+                            "\t信号发生次数：" + str(today_7d_times) + status
 
                 if signal == "":
-                    print("时区："+timezone + "\t" + total_date +
-                          "\tXAUUSD价格："+str(close), file=XAUUSD_signal_file)
-                    print("时区："+timezone + "\t" +
-                          total_date+"\tXAUUSD价格："+str(close))
+                    signal_notification = "时区："+timezone + "\t" + \
+                        total_date + "\tXAUUSD价格："+str(close)
+
+                # 打印信号提示并使用tg机器人发送
+                def notification_output():
+                    print(signal_notification)
+                    print(signal_notification, file=XAUUSD_signal_file)
+
+                    # 当存在信号时用tg机器人发送信息
+                    if signal != "":
+                        signal_notification_tg = signal_notification.replace("\t","\n")
+                        bot_send_notification(signal_notification_tg)
+
+                notification_output()
 
         iter_XAUUSD()
 
@@ -201,6 +251,7 @@ class current_signal:
                 close = comb_info[2]
                 ts = comb_info[3]
                 signal = ""
+                status = ""
 
                 # 判断当日最高价与最低价，如果是新的一天将会在后面覆盖
                 today_max_price = max(close, today_max_price)
@@ -242,17 +293,27 @@ class current_signal:
                     if close <= last_up_key_spot - 3*comb_coef:
                         signal = "上升趋势结束"
                         today_1_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_1_times), file=comb_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_1_times))
+
+                        # 价格在下降时，判断当前价格是否低于本日最低价格，并记录statu状态
+                        if close < today_min_price:
+                            status = "status:lower"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tcomb价格：" + \
+                            str(close)+"\tcomb:"+match_mode+"存在趋势信号：" + \
+                            signal+"\t信号发生次数：" + str(today_1_times) + status
+
                     elif close >= last_up_key_spot + 3*comb_coef:
                         signal = "上升趋势恢复"
                         today_2_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_2_times), file=comb_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_2_times))
+
+                        # 价格在上升时，判断当前价格与今日最高价格大小并记录status
+                        if close > today_max_price:
+                            status = "status:higher"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tcomb价格：" + \
+                            str(close)+"\tcomb:"+match_mode+"存在趋势信号：" + \
+                            signal+"\t信号发生次数：" + str(today_2_times) + status
+
                     if close <= today_max_price - 6*comb_coef:
                         signal = "上升日内危险"
                         today_7u_times += 1
@@ -261,27 +322,37 @@ class current_signal:
                         today_2_times = 0
                         today_3_times = 0
                         today_4_times = 0
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7u_times), file=comb_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7u_times))
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tcomb价格：" + \
+                            str(close)+"\tcomb:"+match_mode+"存在趋势信号：" + \
+                            signal+"\t信号发生次数：" + str(today_7u_times) + status
 
                 # 当前趋势栏在下降趋势栏时，与下降趋势栏中的最新关键点比较，向上3点为下降趋势结束（记录为3），向下3点为下降趋势恢复（记录为4），若日内创新低但最新的价格比新低高6点则为日内下降趋势危险信号（记录为7d）
                 elif cur_column in (4, 5, 6):
                     if close >= last_down_key_spot + 3*comb_coef:
                         signal = "下降趋势结束"
                         today_3_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_3_times), file=comb_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_3_times))
+
+                        # 价格在上升时，判断当前价格与今日最高价格大小并记录status
+                        if close > today_max_price:
+                            status = "status:higher"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tcomb价格：" + \
+                            str(close)+"\tcomb:"+match_mode+"存在趋势信号：" + \
+                            signal+"\t信号发生次数：" + str(today_3_times) + status
+
                     elif close <= last_down_key_spot - 3*comb_coef:
                         signal = "下降趋势恢复"
                         today_4_times += 1
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_4_times), file=comb_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_4_times))
+
+                        # 价格在下降时，判断当前价格是否低于本日最低价格，并记录statu状态
+                        if close < today_min_price:
+                            status = "status:lower"
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tcomb价格：" + \
+                            str(close)+"\tcomb:"+match_mode+"存在趋势信号：" + \
+                            signal+"\t信号发生次数：" + str(today_4_times) + status
+
                     if close >= today_min_price + 6*comb_coef:
                         signal = "下降日内危险"
                         today_7d_times += 1
@@ -290,16 +361,27 @@ class current_signal:
                         today_2_times = 0
                         today_3_times = 0
                         today_4_times = 0
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7d_times), file=comb_signal_file)
-                        print("时区："+timezone + "\t" + total_date + "\tcomb价格："+str(close)+"\tcomb:"+match_mode+"存在趋势信号：" +
-                              signal+"\t信号发生次数：" + str(today_7d_times))
+
+                        signal_notification = "时区："+timezone + "\t" + total_date + "\tcomb价格：" + \
+                            str(close)+"\tcomb:"+match_mode+"存在趋势信号：" + \
+                            signal+"\t信号发生次数：" + str(today_7d_times) + status
 
                 if signal == "":
-                    print("时区："+timezone + "\t" + total_date +
-                          "\tcomb价格："+str(close), file=comb_signal_file)
-                    print("时区："+timezone + "\t" +
-                          total_date+"\tcomb价格："+str(close))
+                    signal_notification = "时区："+timezone + \
+                        "\t" + total_date + "\tcomb价格："+str(close)
+
+                # 打印信号提示并使用tg机器人发送
+                def notification_output():
+                    print(signal_notification)
+                    print(signal_notification, file=XAUUSD_signal_file)
+
+                    # 当存在信号时用tg机器人发送信息
+                    if signal != "":
+                        signal_notification_tg = signal_notification.replace("\t","\n")
+                        bot_send_notification(signal_notification_tg)
+
+                notification_output()
+
         iter_comb()
 
         XAUUSD_signal_file.close()
@@ -307,7 +389,7 @@ class current_signal:
 
 
 if __name__ == "__main__":
-    current_signal(r"database\XAUUSD_M.db", r"database\XAUUSD_DXY_TNX_D1_bem_exchange.db", r"report\XAUUSD_exchange_bem.txt",
-                   r"report\XAUUSD_DXY_TNX_comb_exchange_bem.txt", "exchange", 7/3, 9/3, "best_effort_match", "all")
-    current_signal(r"database\XAUUSD_M.db", r"database\XAUUSD_DXY_TNX_D1_sm_est.db", r"report\XAUUSD_sm_est.txt",
-                   r"report\XAUUSD_DXY_TNX_comb_sm_est.txt", "est", 7/3, 9/3, "strict_match", "all")
+    current_signal(r"database/XAUUSD_M.db", r"database/XAUUSD_DXY_TNX_D1_bem_exchange.db", r"report/XAUUSD_exchange_bem.txt",
+                   r"report/XAUUSD_DXY_TNX_comb_exchange_bem.txt", "exchange", 7/3, 9/3, "best_effort_match", "all", "2052847212:AAGBBhtGr01kvru6iwBB3V8nmcdPpbhTh9c", "422667436", "@Livermore_Notice")
+    current_signal(r"database/XAUUSD_M.db", r"database/XAUUSD_DXY_TNX_D1_sm_est.db", r"report/XAUUSD_sm_est.txt",
+                   r"report/XAUUSD_DXY_TNX_comb_sm_est.txt", "est", 7/3, 9/3, "strict_match", "all", "all", "2052847212:AAGBBhtGr01kvru6iwBB3V8nmcdPpbhTh9c", "422667436", "@Livermore_Notice")

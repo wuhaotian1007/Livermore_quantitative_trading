@@ -24,4 +24,4 @@ class telegram_bot:
 if __name__ == "__main__":
     Livermore_notice_bot = telegram.Bot(
         "2052847212:AAGBBhtGr01kvru6iwBB3V8nmcdPpbhTh9c")
-    Livermore_notice_bot.send_message(chat_id="@1748558438", text="1")
+    Livermore_notice_bot.send_message(chat_id="@Livermore_Notice", text="1")
