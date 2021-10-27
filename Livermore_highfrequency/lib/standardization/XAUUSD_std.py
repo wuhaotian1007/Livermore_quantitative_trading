@@ -20,7 +20,7 @@ import sqlite3
 
 
 class XAUUSD_std:
-    def __init__(self, XAUUSD_data_path, XAUUSD_db_path, length):
+    def __init__(self, XAUUSD_data_path, XAUUSD_db_path, *length):
         # 连接数据库data.db和指针
         conn = sqlite3.connect(XAUUSD_db_path)
         c = conn.cursor()
@@ -37,32 +37,33 @@ class XAUUSD_std:
                 NOTES           TEXT           NULL);''')
 
         # 按路径读取数据
-        with open(XAUUSD_data_path, 'r', encoding="UTF-8") as f_XAUUSD:
-            XAUUSD_csv = csv.reader(f_XAUUSD)
-            # 跳过第一行
-            next(XAUUSD_csv)
-            for row in XAUUSD_csv:
-                date = row[1]
-                # 改变日期格式从yyyy/m/d到yyyy-mm-dd
-                date = date.replace('/', '-')
-                date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-                date = date.strftime("%Y-%m-%d %H:%M:%S")
-                ts = time.mktime(time.strptime(date, "%Y-%m-%d %H:%M:%S"))
-                high = row[3]
-                low = row[4]
-                close = row[5]
-                volume = row[6]
-                # 插入数据
-                close = round(float(close), 2)
-                c.execute(
-                    "select * from XAUUSD_list where TIMESTICKER == {}".format(ts))
-                ts_exist = c.fetchone()
-                if not ts_exist:
-                    c.execute("insert into XAUUSD_list( DATE, NAME, TIMESTICKER, CLOSE, VOLUME, HIGH, LOW) \
-                                VALUES(?, ?, ?, ?, ?, ? , ?) ", (date, "XAUUSD", ts, close, volume, high, low))
-                    print("输入{0}".format(ts))
-                else:
-                    print("重复输入{0}".format(ts))
+        df = pd.read_csv(XAUUSD_data_path)
+        if length:
+            df = df.tail(length)
+
+        # 遍历df行
+        for index, row in df.iterrows():
+            date = row["time"]
+            # 改变日期格式从yyyy/m/d到yyyy-mm-dd
+            date = date.replace('/', '-')
+            date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            date = date.strftime("%Y-%m-%d %H:%M:%S")
+            ts = time.mktime(time.strptime(date, "%Y-%m-%d %H:%M:%S"))
+            high = row["high"]
+            low = row["low"]
+            close = row["close"]
+            volume = row["tick_volume"]
+            # 插入数据
+            close = round(float(close), 2)
+            c.execute(
+                "select * from XAUUSD_list where TIMESTICKER == {}".format(ts))
+            ts_exist = c.fetchone()
+            if not ts_exist:
+                c.execute("insert into XAUUSD_list( DATE, NAME, TIMESTICKER, CLOSE, VOLUME, HIGH, LOW) \
+                            VALUES(?, ?, ?, ?, ?, ? , ?) ", (date, "XAUUSD", ts, close, volume, high, low))
+                print("输入{0}".format(ts))
+            else:
+                print("重复输入{0}".format(ts))
 
         print("XAUUSD标准化入库成功,保存至{}".format(XAUUSD_db_path))
 
@@ -72,7 +73,7 @@ class XAUUSD_std:
 
 
 class DXY_std:
-    def __init__(self, DXY_data_path, XAUUSD_db_path, length):
+    def __init__(self, DXY_data_path, XAUUSD_db_path, *length):
         # 连接数据库data.db和指针
         conn = sqlite3.connect(XAUUSD_db_path)
         c = conn.cursor()
@@ -86,25 +87,24 @@ class DXY_std:
                 VOLUME          UNSIGNED INT   DEFAULT 0);''')
 
         # 按路径读取数据
+        df = pd.read_csv(DXY_data_path)
+        if length:
+            df = df.tail(length)
 
-        with open(DXY_data_path, 'r', encoding="UTF-8") as f_DXY:
-            DXY_csv = csv.reader(f_DXY)
-            # 跳过第一行
-            next(DXY_csv)
-            for row in DXY_csv:
-                date = row[0][0:19]
-                close = row[5]
-                close = round(float(close), 2)
-                ts = time.mktime(time.strptime(date, "%Y-%m-%d %H:%M:%S"))
-                c.execute(
-                    "select * from DXY_LIST where TIMESTICKER == {}".format(ts))
-                ts_exist = c.fetchone()
-                if not ts_exist:
-                    c.execute("insert into DXY_list(DATE, NAME, TIMESTICKER, CLOSE) \
-                                VALUES(?, ?, ?, ?) ", (date, "DXY", ts, close))
-                    print("输入{0}".format(ts))
-                else:
-                    print("重复输入{0}".format(ts))
+        for index, row in df.iterrows():
+            date = row[0][0:19]
+            close = row[5]
+            close = round(float(close), 2)
+            ts = time.mktime(time.strptime(date, "%Y-%m-%d %H:%M:%S"))
+            c.execute(
+                "select * from DXY_LIST where TIMESTICKER == {}".format(ts))
+            ts_exist = c.fetchone()
+            if not ts_exist:
+                c.execute("insert into DXY_list(DATE, NAME, TIMESTICKER, CLOSE) \
+                            VALUES(?, ?, ?, ?) ", (date, "DXY", ts, close))
+                print("输入{0}".format(ts))
+            else:
+                print("重复输入{0}".format(ts))
 
         print("DXY标准化入库成功,保存至{0}".format(XAUUSD_db_path))
 
@@ -114,7 +114,7 @@ class DXY_std:
 
 
 class TNX_std:
-    def __init__(self, TNX_data_path, XAUUSD_db_path, length):
+    def __init__(self, TNX_data_path, XAUUSD_db_path, *length):
         # 连接数据库data.db和指针
         conn = sqlite3.connect(XAUUSD_db_path)
         c = conn.cursor()
@@ -129,24 +129,23 @@ class TNX_std:
 
         # 按路径读取数据
 
-        with open(TNX_data_path, 'r', encoding="UTF-8") as f_TNX:
-            TNX_csv = csv.reader(f_TNX)
-            # 跳过第一行
-            next(TNX_csv)
-            for row in TNX_csv:
-                date = row[0][0:19]
-                close = row[5]
-                close = round(float(close), 2)
-                ts = time.mktime(time.strptime(date, "%Y-%m-%d %H:%M:%S"))
-                c.execute(
-                    "select * from TNX_list where TIMESTICKER == {}".format(ts))
-                ts_exist = c.fetchone()
-                if not ts_exist:
-                    c.execute("insert into TNX_list( DATE, NAME, TIMESTICKER, CLOSE) \
-                                    VALUES(?, ?, ?, ?) ", (date, "TNX", ts, close))
-                    print("输入{0}".format(ts))
-                else:
-                    print("重复输入{0}".format(ts))
+        df = pd.read_csv(TNX_data_path)
+        if length:
+            df = df.tail(length)
+        for index, row in df.iterrows():
+            date = row[0][0:19]
+            close = row[5]
+            close = round(float(close), 2)
+            ts = time.mktime(time.strptime(date, "%Y-%m-%d %H:%M:%S"))
+            c.execute(
+                "select * from TNX_list where TIMESTICKER == {}".format(ts))
+            ts_exist = c.fetchone()
+            if not ts_exist:
+                c.execute("insert into TNX_list( DATE, NAME, TIMESTICKER, CLOSE) \
+                                VALUES(?, ?, ?, ?) ", (date, "TNX", ts, close))
+                print("输入{0}".format(ts))
+            else:
+                print("重复输入{0}".format(ts))
 
         print("TNX标准化入库成功,保存至{0}".format(XAUUSD_db_path))
 
@@ -157,11 +156,11 @@ class TNX_std:
 
 if __name__ == '__main__':
     # 小时线入库
-    XAUUSD_std(r"raw_data\XAUUSD_H1.csv", r"database\XAUUSD_H.db",5)
-    DXY_std(r"raw_data\DXY_H1.csv", r"database\XAUUSD_H.db",5)
-    TNX_std(r"raw_data\TNX_H1.csv", r"database\XAUUSD_H.db",5)
+    XAUUSD_std(r"raw_data\XAUUSD_H1.csv", r"database\XAUUSD_H.db", 5)
+    DXY_std(r"raw_data\DXY_H1.csv", r"database\XAUUSD_H.db", 5)
+    TNX_std(r"raw_data\TNX_H1.csv", r"database\XAUUSD_H.db", 5)
 
     # 分钟线入库
-    XAUUSD_std(r"raw_data\XAUUSD_M1.csv", r"database\XAUUSD_M.db",5)
-    DXY_std(r"raw_data\DXY_M2.csv", r"database\XAUUSD_M.db",5)
-    TNX_std(r"raw_data\TNX_M2.csv", r"database\XAUUSD_M.db",5)
+    XAUUSD_std(r"raw_data\XAUUSD_M1.csv", r"database\XAUUSD_M.db", 5)
+    DXY_std(r"raw_data\DXY_M2.csv", r"database\XAUUSD_M.db", 5)
+    TNX_std(r"raw_data\TNX_M2.csv", r"database\XAUUSD_M.db", 5)
