@@ -1,2 +1,10 @@
-时区：exchange	2021-10-27 18:31:00	XAUUSD价格：1793.09	上升趋势栏
-时区：exchange	2021-10-27 18:31:00	comb价格：271.27	下降趋势栏	comb:best_effort_match存在趋势信号：下降趋势结束	信号发生次数：1status:higher
+时区：exchange	2021-10-27 18:27:00	XAUUSD价格：1792.27	当前趋势栏：上升趋势栏	XAUUSD存在趋势信号：上升趋势结束	信号发生次数：1	status:lower
+时区：exchange	2021-10-27 18:28:00	XAUUSD价格：1792.26	当前趋势栏：上升趋势栏	XAUUSD存在趋势信号：上升趋势结束	信号发生次数：2	status:lower
+时区：exchange	2021-10-27 18:29:00	XAUUSD价格：1792.52	当前趋势栏：上升趋势栏	XAUUSD存在趋势信号：上升趋势结束	信号发生次数：3	
+时区：exchange	2021-10-27 18:30:00	XAUUSD价格：1792.85	当前趋势栏：上升趋势栏	XAUUSD存在趋势信号：上升趋势结束	信号发生次数：4	
+时区：exchange	2021-10-27 18:31:00	XAUUSD价格：1793.09	当前趋势栏：上升趋势栏	XAUUSD存在趋势信号：上升趋势结束	信号发生次数：5	
+时区：exchange	2021-10-27 18:27:00	comb价格：271.12	当前趋势栏：下降趋势栏	comb:best_effort_match 存在趋势信号：下降趋势结束	信号发生次数：1	status:higher
+时区：exchange	2021-10-27 18:28:00	comb价格：271.11	当前趋势栏：下降趋势栏	comb:best_effort_match 存在趋势信号：下降趋势结束	信号发生次数：2	
+时区：exchange	2021-10-27 18:29:00	comb价格：271.22	当前趋势栏：下降趋势栏	comb:best_effort_match 存在趋势信号：下降趋势结束	信号发生次数：3	status:higher
+时区：exchange	2021-10-27 18:30:00	comb价格：271.36	当前趋势栏：下降趋势栏	comb:best_effort_match 存在趋势信号：下降趋势结束	信号发生次数：4	status:higher
+时区：exchange	2021-10-27 18:31:00	comb价格：271.27	当前趋势栏：下降趋势栏	comb:best_effort_match 存在趋势信号：下降趋势结束	信号发生次数：5	

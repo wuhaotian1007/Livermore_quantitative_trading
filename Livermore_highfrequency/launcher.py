@@ -91,7 +91,10 @@ XAUUSD_bem_exchange_txt_path = r"report\XAUUSD_bem_exchange.txt"
 XAUUSD_sm_est_txt_path = r"report\XAUUSD_sm_est.txt"
 XAUUSD_DXY_TNX_D1_bem_exchange_xlsx_path = r"report\XAUUSD_DXY_TNX_D1_bem_exchange.xlsx"
 XAUUSD_DXY_TNX_D1_sm_est_xlsx_path = r"report\XAUUSD_DXY_TNX_D1_sm_est.xlsx"
-
+XAUUSD_DXY_TNX_D1_bem_exchange_cloud_xlsx_path = onedrive_path + \
+    r"work\Livermore_report\latest_report\XAUUSD_DXY_TNX_D1_bem_exchange.xlsx"
+XAUUSD_DXY_TNX_D1_sm_est_cloud_xlsx_path = onedrive_path + \
+    r"work\Livermore_report\latest_report\XAUUSD_DXY_TNX_D1_sm_est.xlsx"
 # 首次运行程序
 
 
@@ -195,10 +198,16 @@ def daily_cycle():
               XAUUSD_DXY_TNX_D1_bem_exchange_xlsx_path)
     vis_trend(XAUUSD_DXY_TNX_D1_sm_est_db_path,
               XAUUSD_DXY_TNX_D1_sm_est_xlsx_path)
+    vis_trend(XAUUSD_DXY_TNX_D1_bem_exchange_db_path,
+              XAUUSD_DXY_TNX_D1_bem_exchange_cloud_xlsx_path)
+    vis_trend(XAUUSD_DXY_TNX_D1_sm_est_db_path,
+              XAUUSD_DXY_TNX_D1_sm_est_cloud_xlsx_path)
+
 
 def time_pass():
     print(1)
 # schedule 定期执行
+
 
 def carry_out():
     execute_way = input("execute_way:(initial/normal):")
@@ -210,6 +219,7 @@ def carry_out():
     elif execute_way == "normal":
         print("开始执行日常实时常驻程序")
         minute_cycle()
+
         def tasklist():
             schedule.clear()
             # 每分钟执行一次minute_cycle
@@ -220,5 +230,6 @@ def carry_out():
             while True:
                 schedule.run_pending()
         tasklist()
+
 
 carry_out()
